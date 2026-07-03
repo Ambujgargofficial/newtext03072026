@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesticide Inventory Manager</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: 'Work Sans', sans-serif; }
+    .tab-active { border-bottom: 3px solid #16a34a; color: #16a34a; font-weight: 600; }
+    .manage-tab-active { border-bottom: 3px solid #16a34a; color: #16a34a; font-weight: 600; }
+    .dropdown-list { max-height: 200px; overflow-y: auto; }
+    .report-table th { position: sticky; top: 0; }
+  </style>
+</head>
+<body class="min-h-screen w-full" style="background: rgb(240, 253, 244);">
+  <header class="bg-green-800 p-4 shadow-md" style="background: rgb(22, 101, 52);">
+   <h1 class="text-center text-white font-bold" style="color: rgb(255, 255, 255); font-weight: 700; font-size: 24px;">Pesticide Inventory Manager</h1>
+  </header>
+  <main class="max-w-2xl mx-auto p-4">
+   <div class="flex border-b mb-4 text-sm">
+    <button id="tab-entry" class="flex-1 py-3 text-center tab-active" onclick="showView('entry')">New Entry</button> 
+    <button id="tab-history" class="flex-1 py-3 text-center text-gray-500" onclick="showView('history')">History</button> 
+    <button id="tab-stock" class="flex-1 py-3 text-center text-gray-500" onclick="showView('stock')">Stock</button> 
+    <button id="tab-report" class="flex-1 py-3 text-center text-gray-500" onclick="showView('report')">Report</button> 
+    <button id="tab-manage" class="flex-1 py-3 text-center text-gray-500" onclick="showView('manage')">Manage</button>
+   </div>
+   
+   <!-- Entry View -->
+   <div id="view-entry">
+    <div class="flex gap-2 mb-4">
+      <button id="btn-purchase" class="flex-1 py-2 rounded-lg font-semibold bg-green-600 text-white" onclick="setType('purchase')">Purchase</button> 
+      <button id="btn-sale" class="flex-1 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700" onclick="setType('sale')">Sale</button>
+    </div>
+    <form id="entry-form" class="space-y-3" onsubmit="handleSubmit(event)">
+     <div>
+      <h3 class="font-semibold text-sm mb-2">Items in this entry</h3>
+      <div id="items-in-entry" class="space-y-2 mb-3 border rounded-lg p-3 bg-gray-50 min-h-16"></div>
+     </div>
+     <div class="border rounded-lg p-3 bg-white space-y-3">
+      <h3 class="font-semibold text-sm">Add items to entry</h3>
+      <div>
+       <label class="block text-sm font-medium mb-1" for="article-input" style="color: rgb(31, 41, 55);">Article</label>
+       <div class="relative">
+        <input id="article-input" type="text" class="w-full border rounded-lg p-2.5" autocomplete="off" placeholder="Search article...">
+        <div id="article-dropdown" class="dropdown-list absolute z-10 w-full bg-white border rounded-lg mt-1 hidden shadow-lg"></div>
+       </div>
+       <p id="measure-display" class="text-xs text-gray-500 mt-1"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+       <div>
+        <div class="flex justify-between items-center mb-1">
+         <label class="block text-sm font-medium" for="quantity" style="color: rgb(31, 41, 55);">Quantity</label> 
+         <span id="available-qty" class="text-xs text-gray-500"></span>
+        </div>
+        <input id="quantity" type="number" min="0.01" step="any" class="w-full border rounded-lg p-2.5" placeholder="0.00">
+       </div>
+       <div>
+        <label class="block text-sm font-medium mb-1" for="rate" style="color: rgb(31, 41, 55);">Rate (₹)</label> 
+        <input id="rate" type="number" min="0" step="any" class="w-full border rounded-lg p-2.5" placeholder="0.00">
+       </div>
+      </div>
+      <button id="btn-add-item" type="button" class="w-full py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 text-sm">+ Add Item</button>
+     </div>
+     <div id="party-field">
+      <label class="block text-sm font-medium mb-1" for="party-input" style="color: rgb(31, 41, 55);">Party Name</label>
+      <div class="relative">
+       <input id="party-input" type="text" class="w-full border rounded-lg p-2.5" autocomplete="off" placeholder="Search party..." required="">
+       <div id="party-dropdown" class="dropdown-list absolute z-10 w-full bg-white border rounded-lg mt-1 hidden shadow-lg"></div>
+      </div>
+     </div>
+     <div id="customer-field" class="hidden">
+      <label class="block text-sm font-medium mb-1" for="customer" style="color: rgb(31, 41, 55);">Customer Name</label> 
+      <input id="customer" type="text" class="w-full border rounded-lg p-2.5">
+     </div>
+     <div>
+      <label class="block text-sm font-medium mb-1" for="remarks" style="color: rgb(31, 41, 55);">Remarks (optional)</label> 
+      <input id="remarks" type="text" class="w-full border rounded-lg p-2.5">
+     </div>
+     <div>
+      <label class="block text-sm font-medium mb-1" for="date" style="color: rgb(31, 41, 55);">Date</label> 
+      <input id="date" type="date" class="w-full border rounded-lg p-2.5" required="">
+     </div>
+     <button id="submit-btn-purchase" type="submit" class="w-full py-3 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700" style="background: rgb(22, 163, 74);">Save Entry Purchase</button> 
+     <button id="submit-btn-sale" type="submit" class="w-full py-3 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 hidden" style="background: rgb(37, 99, 235);">Save Sale Entry</button>
+     <div id="form-msg" class="text-center text-sm hidden"></div>
+    </form>
+   </div>
+   
+   <!-- History View -->
+   <div id="view-history" class="hidden">
+    <div id="history-list" class="space-y-2"></div>
+    <p id="empty-history" class="text-center text-gray-400 py-8">No transactions yet</p>
+   </div>
+   
+   <!-- Stock View -->
+   <div id="view-stock" class="hidden">
+    <h2 class="font-semibold text-lg mb-3" style="color: rgb(31, 41, 55);">Remaining Stock</h2>
+    <div id="stock-list" class="space-y-2"></div>
+    <p id="empty-stock" class="text-center text-gray-400 py-8">No stock data yet</p>
+   </div>
+   
+   <!-- Report View -->
+   <div id="view-report" class="hidden">
+    <h2 class="font-semibold text-lg mb-3" style="color: rgb(31, 41, 55);">Report</h2>
+    <div class="flex gap-2 mb-4 items-end">
+     <div class="flex-1">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+      <input id="report-start" type="date" class="w-full border rounded-lg p-2.5 text-sm">
+     </div>
+     <div class="flex-1">
+      <label class="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+      <input id="report-end" type="date" class="w-full border rounded-lg p-2.5 text-sm">
+     </div>
+     <button type="button" class="px-4 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 text-sm" onclick="generateReport()">Generate</button> 
+     <button id="export-btn" type="button" class="p-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 hidden" title="Download as CSV" onclick="exportToExcel()"><i data-lucide="download" style="width:18px;height:18px;"></i></button>
+    </div>
+    <div id="report-output" class="overflow-x-auto"></div>
+    <p id="empty-report" class="text-center text-gray-400 py-8">Select date range and generate report</p>
+    <div id="insights-section" class="mb-6 hidden mt-6">
+     <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+      <h3 class="font-semibold text-sm mb-4 text-gray-800">📊 Quick Insights</h3>
+      <div class="grid grid-cols-1 gap-3 mb-4">
+       <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+        <p class="text-xs font-medium text-green-800 mb-2">🔥 Top Sellers (by qty)</p>
+        <div id="top-sellers-list" class="text-xs space-y-1"></div>
+       </div>
+       <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+        <p class="text-xs font-medium text-yellow-800 mb-2">⚠️ Dead Stock (no activity)</p>
+        <div id="dead-stock-list" class="text-xs space-y-1"></div>
+       </div>
+      </div>
+      <button id="analyze-btn" type="button" class="w-full py-2.5 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 text-sm" onclick="analyzeOrderSuggestions()">🔍 Analyze &amp; Order Suggestions</button>
+     </div>
+    </div>
+   </div>
+   <div id="analysis-section" class="mb-6 hidden">
+    <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+     <div class="flex justify-between items-center mb-3">
+      <h3 class="font-semibold text-sm text-gray-800">📈 Order Analysis &amp; Suggestions</h3>
+      <button type="button" class="text-xs text-gray-500 hover:text-gray-700" onclick="document.getElementById('analysis-section').classList.add('hidden')">✕</button>
+     </div>
+     <div id="analysis-content" class="text-xs space-y-2"></div>
+     <button id="export-suggestions-btn" type="button" class="w-full mt-4 py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 text-sm hidden" onclick="exportSuggestions()"><i data-lucide="download" style="width:16px;height:16px;"></i> Export Suggestions as CSV</button>
+    </div>
+   </div>
+   
+   <!-- Manage View -->
+   <div id="view-manage" class="hidden">
+    <h2 class="font-semibold text-lg mb-3" style="color: rgb(31, 41, 55);">Manage</h2>
+    
+    <button type="button" onclick="syncToGoogleSheets()" id="sync-btn" class="w-full py-2 mb-4 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 text-sm" style="background: rgb(37, 99, 235);">Sync Data to Google Sheets</button>
+
+    <!-- Manage Sub-tabs -->
+    <div class="flex border-b mb-4 text-sm">
+     <button id="manage-tab-items" class="flex-1 py-3 text-center manage-tab-active" onclick="showManageTab('items')">📦 Items</button> 
+     <button id="manage-tab-parties" class="flex-1 py-3 text-center text-gray-500" onclick="showManageTab('parties')">🏢 Parties</button> 
+     <button id="manage-tab-measures" class="flex-1 py-3 text-center text-gray-500" onclick="showManageTab('measures')">📏 Measures</button>
+    </div>
+    
+    <!-- Items Section -->
+    <div id="manage-items-view" class="manage-content">
+     <form id="add-item-form" class="border rounded-lg p-3 mb-3 space-y-2 bg-white" onsubmit="handleAddItem(event)">
+      <div class="grid grid-cols-2 gap-2">
+       <input id="new-item-name" type="text" placeholder="Item name" class="border rounded p-2 text-sm" required=""> 
+       <input id="new-item-size" type="number" step="any" min="0" placeholder="Size" class="border rounded p-2 text-sm">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+       <select id="new-item-measure" class="border rounded p-2 text-sm bg-white" required=""><option value="">Measure</option></select> 
+       <input id="new-item-price" type="number" step="any" min="0" placeholder="Sale ₹" class="border rounded p-2 text-sm" required="">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+       <input id="new-item-purchase-price" type="number" step="any" min="0" placeholder="Cost ₹" class="border rounded p-2 text-sm"> 
+       <input id="new-item-purchase-date" type="date" class="border rounded p-2 text-sm">
+      </div>
+      <button type="submit" class="w-full py-2 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 text-sm" style="background: rgb(22, 163, 74);">Add / Update Item</button>
+     </form>
+     <div id="items-list" class="space-y-1 text-sm max-h-96 overflow-y-auto"></div>
+    </div>
+    <div id="manage-parties-view" class="manage-content hidden">
+     <form id="add-party-form" class="flex gap-2 mb-3" onsubmit="handleAddParty(event)">
+      <input id="new-party-name" type="text" placeholder="New party name" class="flex-1 border rounded-lg p-2 text-sm" required=""> 
+      <button type="submit" class="px-4 py-2 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 text-sm">Add</button>
+     </form>
+     <div id="parties-list" class="space-y-1 text-sm max-h-96 overflow-y-auto"></div>
+    </div>
+    <div id="manage-measures-view" class="manage-content hidden">
+     <form id="add-measure-form" class="flex gap-2 mb-3" onsubmit="handleAddMeasure(event)">
+      <input id="new-measure-name" type="text" placeholder="New measure (e.g. LTR)" class="flex-1 border rounded-lg p-2 text-sm" required=""> 
+      <button type="submit" class="px-4 py-2 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 text-sm">Add</button>
+     </form>
+     <div id="measures-list" class="space-y-1 text-sm max-h-96 overflow-y-auto"></div>
+    </div>
+   </div>
+
+   <script>
+    const defaultItems = [
+      {name:"Acre",measure:"ML",price:280,size:100,purchasePrice:210,purchaseDate:'2026-06-15'},
+      {name:"Antacidul (Globe)",measure:"KG",price:650,size:1,purchasePrice:480,purchaseDate:'2026-06-10'},
+      {name:"Azodirachtin (Neem)",measure:"ML",price:420,size:250,purchasePrice:280,purchaseDate:'2026-06-20'},
+      {name:"Azoxystrobin (Syngenta)",measure:"ML",price:720,size:500,purchasePrice:520,purchaseDate:'2026-06-12'},
+      {name:"Bacillus thuringiensis",measure:"Gram",price:580,size:500,purchasePrice:380,purchaseDate:'2026-06-05'}
+    ];
+    const defaultParties = ["Sumitomo","Globe","Narruda","Stanes","AFC","Shivalik","Gharda","Grovens","Dhanat","T-stain","Best","Anex","Dsy"];
+    const defaultMeasures = ["KG","ML","LTR","Gram"];
+
+    // NEW INDEPENDENT STORAGE LOGIC (REPLACED CANVA SDK)
+    function loadItems() { const s=localStorage.getItem('pest_items'); return s?JSON.parse(s):defaultItems; }
+    function saveItems(i) { localStorage.setItem('pest_items',JSON.stringify(i)); }
+    function loadParties() { const s=localStorage.getItem('pest_parties'); return s?JSON.parse(s):defaultParties; }
+    function saveParties(p) { localStorage.setItem('pest_parties',JSON.stringify(p)); }
+    function loadMeasures() { const s=localStorage.getItem('pest_measures'); return s?JSON.parse(s):defaultMeasures; }
+    function saveMeasures(m) { localStorage.setItem('pest_measures',JSON.stringify(m)); }
+    function loadTransactions() { const s=localStorage.getItem('pest_transactions'); return s?JSON.parse(s):[]; }
+    function saveTransactions(data) { localStorage.setItem('pest_transactions',JSON.stringify(data)); }
+
+    let items = loadItems();
+    let parties = loadParties();
+    let measures = loadMeasures();
+    let allData = loadTransactions(); 
+    let currentType = 'purchase';
+    let selectedArticle = '';
+    let selectedSize = 0;
+    let entryItems = [];
+
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    const istOffset = 5.5*60*60*1000;
+    const nowIST = new Date(Date.now()+istOffset);
+    const monthStart = new Date(Date.UTC(nowIST.getUTCFullYear(),nowIST.getUTCMonth(),1));
+    document.getElementById('report-start').value = new Date(monthStart.getTime()+istOffset).toISOString().split('T')[0];
+    document.getElementById('report-end').value = nowIST.toISOString().split('T')[0];
+
+    function populateMeasureSelect() {
+      const sel = document.getElementById('new-item-measure');
+      sel.innerHTML = '<option value="">Measure</option>' + measures.map(m=>`<option value="${m}">${m}</option>`).join('');
+    }
+    populateMeasureSelect();
+
+    // Article searchable dropdown
+    const articleInput = document.getElementById('article-input');
+    const articleDropdown = document.getElementById('article-dropdown');
+    articleInput.addEventListener('input', function() { const val=this.value.toLowerCase(); renderArticleDropdown(items.filter(i=>{const d=i.size&&i.size>0?`${i.name} ${i.size}${i.measure}`:i.name; return d.toLowerCase().includes(val);})); });
+    articleInput.addEventListener('focus', function() { const val=this.value.toLowerCase(); renderArticleDropdown(items.filter(i=>{const d=i.size&&i.size>0?`${i.name} ${i.size}${i.measure}`:i.name; return d.toLowerCase().includes(val);})); });
+    document.addEventListener('click', function(e) { if(!articleInput.contains(e.target)&&!articleDropdown.contains(e.target)) articleDropdown.classList.add('hidden'); if(!partyInput.contains(e.target)&&!partyDropdown.contains(e.target)) partyDropdown.classList.add('hidden'); });
+
+    function renderArticleDropdown(filtered) {
+      if(filtered.length===0){articleDropdown.classList.add('hidden');return;}
+      articleDropdown.innerHTML=filtered.map(i=>{const d=i.size&&i.size>0?`${i.name} ${i.size}${i.measure}`:i.name;return `<div class="px-3 py-2 hover:bg-green-50 cursor-pointer text-sm border-b last:border-0" data-name="${i.name}" data-size="${i.size||0}">${d}</div>`;}).join('');
+      articleDropdown.classList.remove('hidden');
+      articleDropdown.querySelectorAll('div').forEach(d=>{d.addEventListener('click',()=>selectArticle(d.dataset.name,parseFloat(d.dataset.size)));});
+    }
+
+    function calculateAvailableStock(articleName,size){let p=0,s=0;allData.forEach(r=>{try{const it=JSON.parse(r.items);if(Array.isArray(it))it.forEach(x=>{if(x.article===articleName&&(x.size||0)===(size||0)){if(r.type==='purchase')p+=(x.quantity||0);else s+=(x.quantity||0);}});}catch(e){}});return p-s;}
+
+    function selectArticle(name,size){
+      selectedArticle=name;selectedSize=size||0;
+      const d=size&&size>0?`${name} ${size}${items.find(i=>i.name===name)?.measure||''}`:name;
+      articleInput.value=d;articleDropdown.classList.add('hidden');
+      const item=items.find(i=>i.name===name);
+      if(item){let display='Measure: '+item.measure;if(currentType==='purchase'&&item.purchasePrice>0){display+=` | Last: ₹${item.purchasePrice}`;document.getElementById('rate').value=item.purchasePrice;}else if(currentType==='sale'&&item.price>0){document.getElementById('rate').value=item.price;}document.getElementById('measure-display').textContent=display;const av=calculateAvailableStock(name,size);document.getElementById('available-qty').textContent=`Available: ${av} ${item.measure}`;}
+    }
+
+    // Party searchable dropdown
+    const partyInput = document.getElementById('party-input');
+    const partyDropdown = document.getElementById('party-dropdown');
+    partyInput.addEventListener('input', function(){renderPartyDropdown(this.value);});
+    partyInput.addEventListener('focus', function(){renderPartyDropdown(this.value);});
+
+    function renderPartyDropdown(val){
+      const v=val.toLowerCase();
+      const filtered=parties.filter(p=>p.toLowerCase().includes(v));
+      if(filtered.length===0){partyDropdown.classList.add('hidden');return;}
+      partyDropdown.innerHTML=filtered.map(p=>`<div class="px-3 py-2 hover:bg-green-50 cursor-pointer text-sm border-b last:border-0">${p}</div>`).join('');
+      partyDropdown.classList.remove('hidden');
+      partyDropdown.querySelectorAll('div').forEach(d=>{d.addEventListener('click',()=>{partyInput.value=d.textContent;partyDropdown.classList.add('hidden');});});
+    }
+
+    function setType(t){
+      currentType=t;
+      document.getElementById('btn-purchase').className=t==='purchase'?'flex-1 py-2 rounded-lg font-semibold bg-green-600 text-white':'flex-1 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700';
+      document.getElementById('btn-sale').className=t==='sale'?'flex-1 py-2 rounded-lg font-semibold bg-blue-600 text-white':'flex-1 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700';
+      document.getElementById('submit-btn-purchase').classList.toggle('hidden',t!=='purchase');
+      document.getElementById('submit-btn-sale').classList.toggle('hidden',t!=='sale');
+      document.getElementById('party-field').classList.toggle('hidden',t!=='purchase');
+      document.getElementById('customer-field').classList.toggle('hidden',t!=='sale');
+      partyInput.required=t==='purchase';
+      document.getElementById('customer').required=t==='sale';
+      document.getElementById('rate').value='';
+      if(selectedArticle){const item=items.find(i=>i.name===selectedArticle);if(item){if(t==='purchase'&&item.purchasePrice>0)document.getElementById('rate').value=item.purchasePrice;else if(t==='sale'&&item.price>0)document.getElementById('rate').value=item.price;}}
+    }
+
+    function addItemToEntry(){
+      if(!selectedArticle&&!articleInput.value.trim()){showMsg('⚠️ Select an article','orange');return;}
+      const qty=parseFloat(document.getElementById('quantity').value);const rate=parseFloat(document.getElementById('rate').value);
+      if(!qty||qty<=0){showMsg('⚠️ Enter valid quantity','orange');return;}
+      if(rate<0||isNaN(rate)){showMsg('⚠️ Enter valid rate','orange');return;}
+      const artName=selectedArticle||articleInput.value.trim();const item=items.find(i=>i.name===artName);
+      entryItems.push({article:artName,size:selectedSize||0,measure:item?item.measure:'',quantity:qty,rate:rate,total:Math.round(qty*rate*100)/100});
+      renderEntryItems();
+      document.getElementById('quantity').value='';document.getElementById('rate').value='';articleInput.value='';selectedArticle='';selectedSize=0;document.getElementById('measure-display').textContent='';document.getElementById('available-qty').textContent='';
+    }
+    function removeItemFromEntry(idx){entryItems.splice(idx,1);renderEntryItems();}
+    function renderEntryItems(){
+      const c=document.getElementById('items-in-entry');
+      if(entryItems.length===0){c.innerHTML='<p class="text-center text-gray-400 text-sm py-4">No items added yet</p>';return;}
+      let totalAmount=0;entryItems.forEach(it=>{totalAmount+=it.total;});
+      const html=entryItems.map((it,i)=>{const d=it.size&&it.size>0?`${it.article} ${it.size}${it.measure}`:it.article;return `<div class="flex justify-between items-start bg-white p-2.5 rounded border-l-4 ${currentType==='purchase'?'border-green-500':'border-blue-500'}"><div class="flex-1"><p class="font-semibold text-sm">${d}</p><p class="text-xs text-gray-600">Qty: ${it.quantity} × ₹${it.rate} = <span class="font-semibold">₹${it.total}</span></p></div><button type="button" onclick="removeItemFromEntry(${i})" class="ml-2 text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button></div>`;}).join('');
+      const summary=entryItems.length>1?`<div class="bg-gray-100 p-2.5 rounded border-t-2 border-gray-300 mt-2"><div class="flex justify-between"><span class="font-bold text-sm text-gray-700">Total</span><span class="font-bold text-sm"><span class="text-gray-700">${entryItems.length}</span> items | <span class="text-green-700">₹${Math.round(totalAmount*100)/100}</span></span></div></div>`:'';
+      c.innerHTML=html+summary;
+    }
+
+    function showMsg(text,color){const msg=document.getElementById('form-msg');msg.textContent=text;msg.className=`text-center text-sm text-${color}-600`;msg.classList.remove('hidden');setTimeout(()=>msg.classList.add('hidden'),2500);}
+
+    function showView(v){
+      ['entry','history','stock','report','manage'].forEach(id=>{document.getElementById('view-'+id).classList.toggle('hidden',v!==id);document.getElementById('tab-'+id).className='flex-1 py-3 text-center '+(v===id?'tab-active':'text-gray-500');});
+      if(v==='stock')renderStock();
+      if(v==='manage'){showManageTab('items');renderItems();renderParties();renderMeasures();}
+    }
+
+    function showManageTab(tab){
+      document.querySelectorAll('.manage-content').forEach(el => el.classList.add('hidden'));
+      document.querySelector(`#manage-${tab}-view`).classList.remove('hidden');
+      ['items','parties','measures'].forEach(id=>{
+        const btn = document.getElementById('manage-tab-'+id);
+        if(btn) btn.className='flex-1 py-3 text-center '+(tab===id?'manage-tab-active':'text-gray-500');
+      });
+    }
+
+    function renderHistory(){
+      const list=document.getElementById('history-list');const empty=document.getElementById('empty-history');
+      if(allData.length===0){list.innerHTML='';empty.classList.remove('hidden');return;}
+      empty.classList.add('hidden');
+      const sorted=[...allData].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      list.innerHTML=sorted.map(r=>{const actualIdx=allData.indexOf(r);let itemsHtml='';try{const d=JSON.parse(r.items);if(Array.isArray(d))itemsHtml=d.map(it=>{const dn=it.size&&it.size>0?`${it.article} ${it.size}${it.measure}`:it.article;return `<p class="text-xs text-gray-600 mt-1">• ${dn}: ${it.quantity} × ₹${it.rate} = ₹${it.total}</p>`;}).join('');}catch(e){}
+      return `<div class="border rounded-lg p-3"><div class="flex justify-between items-start mb-3"><div><span class="inline-block px-2 py-0.5 rounded text-xs font-semibold ${r.type==='purchase'?'bg-green-100 text-green-800':'bg-blue-100 text-blue-800'}">${r.type==='purchase'?'Purchase':'Sale'}</span><p class="font-semibold mt-1">${r.party_or_customer}</p>${itemsHtml}${r.remarks?`<p class="text-xs text-gray-400 mt-1">${r.remarks}</p>`:''}</div><div class="text-right"><span class="text-xs text-gray-400 block mb-2">${r.date?new Date(r.date).toLocaleDateString('en-IN'):''}</span><div class="flex gap-1.5 justify-end"><button type="button" onclick="editHistoryEntry(${actualIdx})" class="text-xs px-2 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 font-medium">Edit</button><button type="button" onclick="deleteHistoryEntry(${actualIdx})" class="text-xs px-2 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 font-medium">Delete</button></div></div></div></div>`;}).join('');
+      lucide.createIcons();
+    }
+
+    function renderStock(){
+      const stockMap={};allData.forEach(r=>{try{const d=JSON.parse(r.items);if(Array.isArray(d))d.forEach(it=>{const k=`${it.article}|${it.size||0}`;if(!stockMap[k])stockMap[k]={name:it.article,size:it.size||0,purchased:0,sold:0,measure:it.measure||''};if(r.type==='purchase')stockMap[k].purchased+=(it.quantity||0);else stockMap[k].sold+=(it.quantity||0);});}catch(e){}});
+      const list=document.getElementById('stock-list');const empty=document.getElementById('empty-stock');const entries=Object.entries(stockMap);
+      if(entries.length===0){list.innerHTML='';empty.classList.remove('hidden');return;}
+      empty.classList.add('hidden');
+      list.innerHTML=entries.sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([k,s])=>{const rem=s.purchased-s.sold;const color=rem<=0?'text-red-600':rem<5?'text-yellow-600':'text-green-700';const d=s.size&&s.size>0?`${s.name} ${s.size}${s.measure}`:s.name;return `<div class="flex justify-between border rounded-lg p-2.5 bg-white"><span class="font-medium">${d}</span><span class="font-semibold ${color}">${rem} ${s.measure}</span></div>`;}).join('');
+    }
+
+    function renderItems(){
+      const list=document.getElementById('items-list');
+      list.innerHTML=items.map((it,i)=>{const sd=it.size&&it.size>0?` ${it.size}${it.measure}`:'';let pi='';if(it.purchasePrice>0&&it.purchaseDate)pi=`<p class="text-xs text-gray-500">Cost: ₹${it.purchasePrice} (${it.purchaseDate})</p>`;return `<div class="border-b py-2 flex justify-between items-center"><div class="flex-1"><span class="font-medium">${it.name}${sd}</span> <span class="text-green-700 text-xs font-medium">Sale: ₹${it.price||0}</span>${pi}</div><div class="flex gap-1"><button type="button" onclick="editItem(${i})" class="text-xs px-2 py-1 rounded bg-blue-600 text-white">Edit</button><button type="button" onclick="deleteItem(${i})" class="text-xs px-2 py-1 rounded bg-red-600 text-white">Del</button></div></div>`;}).join('');
+    }
+
+    function renderParties(){
+      const list=document.getElementById('parties-list');
+      list.innerHTML=parties.map((p,i)=>`<div class="border-b py-2 flex justify-between items-center"><span>${p}</span><div class="flex gap-1"><button type="button" onclick="editParty(${i})" class="text-xs px-2 py-1 rounded bg-blue-600 text-white">Edit</button><button type="button" onclick="deleteParty(${i})" class="text-xs px-2 py-1 rounded bg-red-600 text-white">Del</button></div></div>`).join('');
+    }
+
+    function renderMeasures(){
+      const list=document.getElementById('measures-list');
+      list.innerHTML=measures.map((m,i)=>`<div class="border-b py-2 flex justify-between items-center"><span>${m}</span><div class="flex gap-1"><button type="button" onclick="editMeasure(${i})" class="text-xs px-2 py-1 rounded bg-blue-600 text-white">Edit</button><button type="button" onclick="deleteMeasure(${i})" class="text-xs px-2 py-1 rounded bg-red-600 text-white">Del</button></div></div>`).join('');
+    }
+
+    function handleAddItem(e){
+      e.preventDefault();const name=document.getElementById('new-item-name').value.trim();const size=parseFloat(document.getElementById('new-item-size').value)||0;const measure=document.getElementById('new-item-measure').value;const price=parseFloat(document.getElementById('new-item-price').value)||0;const purchasePrice=parseFloat(document.getElementById('new-item-purchase-price').value)||0;const purchaseDate=document.getElementById('new-item-purchase-date').value||'';
+      if(!name||!measure)return;const key=`${name.toLowerCase()}|${size}`;const ex=items.findIndex(i=>`${i.name.toLowerCase()}|${i.size||0}`===key);
+      if(ex>=0){items[ex].measure=measure;items[ex].price=price;items[ex].purchasePrice=purchasePrice;items[ex].purchaseDate=purchaseDate;}else{items.push({name,measure,price,size,purchasePrice,purchaseDate});}
+      saveItems(items);document.getElementById('add-item-form').reset();renderItems();
+    }
+
+    function handleAddParty(e){e.preventDefault();const n=document.getElementById('new-party-name').value.trim();if(!n)return;if(!parties.includes(n))parties.push(n);saveParties(parties);document.getElementById('new-party-name').value='';renderParties();}
+    function handleAddMeasure(e){e.preventDefault();const n=document.getElementById('new-measure-name').value.trim().toUpperCase();if(!n)return;if(!measures.includes(n))measures.push(n);saveMeasures(measures);document.getElementById('new-measure-name').value='';renderMeasures();populateMeasureSelect();}
+
+    function editParty(i){
+      const oldName=parties[i];
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-80"><h3 class="font-bold mb-3">Edit Party</h3><input id="edit-party-name" type="text" class="w-full border rounded-lg p-2 mb-4" value="${oldName}"><div class="flex gap-2"><button id="ep-cancel" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="ep-save" class="flex-1 py-2 rounded-lg bg-green-600 text-white font-medium">Save</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('ep-cancel').onclick=()=>modal.remove();
+      document.getElementById('ep-save').onclick=()=>{
+        const n=document.getElementById('edit-party-name').value.trim();
+        if(n && n!==oldName){
+          parties[i]=n;saveParties(parties);
+          for(const entry of allData){
+            if(entry.party_or_customer===oldName){
+              entry.party_or_customer=n;
+            }
+          }
+          saveTransactions(allData);
+          renderParties();
+          renderHistory();
+        }
+        modal.remove();
+      };
+    }
+    function deleteParty(i){parties.splice(i,1);saveParties(parties);renderParties();}
+
+    function editMeasure(i){
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-80"><h3 class="font-bold mb-3">Edit Measure</h3><input id="edit-measure-name" type="text" class="w-full border rounded-lg p-2 mb-4" value="${measures[i]}"><div class="flex gap-2"><button id="em-cancel" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="em-save" class="flex-1 py-2 rounded-lg bg-green-600 text-white font-medium">Save</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('em-cancel').onclick=()=>modal.remove();
+      document.getElementById('em-save').onclick=()=>{const n=document.getElementById('edit-measure-name').value.trim();if(n){measures[i]=n;saveMeasures(measures);renderMeasures();populateMeasureSelect();}modal.remove();};
+    }
+    function deleteMeasure(i){measures.splice(i,1);saveMeasures(measures);renderMeasures();populateMeasureSelect();}
+
+    function editItem(i){
+      const item=items[i];const oldName=item.name;
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full"><h3 class="font-bold mb-4">Edit Item</h3><div class="space-y-3 mb-4"><div><label class="block text-sm font-medium mb-1">Name</label><input id="edit-name" type="text" class="w-full border rounded-lg p-2" value="${item.name}"></div><div><label class="block text-sm font-medium mb-1">Measure</label><select id="edit-measure" class="w-full border rounded-lg p-2 bg-white">${measures.map(m=>`<option value="${m}" ${item.measure===m?'selected':''}>${m}</option>`).join('')}</select></div><div><label class="block text-sm font-medium mb-1">Size</label><input id="edit-size" type="number" step="0.01" min="0" class="w-full border rounded-lg p-2" value="${item.size||0}"></div><div><label class="block text-sm font-medium mb-1">Sale ₹</label><input id="edit-price" type="number" step="any" min="0" class="w-full border rounded-lg p-2" value="${item.price||0}"></div><div><label class="block text-sm font-medium mb-1">Cost ₹</label><input id="edit-purchase-price" type="number" step="any" min="0" class="w-full border rounded-lg p-2" value="${item.purchasePrice||0}"></div><div><label class="block text-sm font-medium mb-1">Purchase Date</label><input id="edit-purchase-date" type="date" class="w-full border rounded-lg p-2" value="${item.purchaseDate||''}"></div></div><div class="flex gap-2"><button id="edit-cancel" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="edit-save" class="flex-1 py-2 rounded-lg bg-green-600 text-white font-medium">Save</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('edit-cancel').onclick=()=>modal.remove();
+      document.getElementById('edit-save').onclick=()=>{
+        const n=document.getElementById('edit-name').value.trim();const m=document.getElementById('edit-measure').value;const s=parseFloat(document.getElementById('edit-size').value)||0;const p=parseFloat(document.getElementById('edit-price').value)||0;const pp=parseFloat(document.getElementById('edit-purchase-price').value)||0;const pd=document.getElementById('edit-purchase-date').value||'';
+        if(n&&m){const nameChanged=n!==oldName;items[i].name=n;items[i].measure=m;items[i].size=s;items[i].price=p;items[i].purchasePrice=pp;items[i].purchaseDate=pd;saveItems(items);
+        if(nameChanged){for(const entry of allData){try{const itms=JSON.parse(entry.items);if(Array.isArray(itms)){let updated=false;itms.forEach(it=>{if(it.article===oldName){it.article=n;updated=true;}});if(updated){entry.items=JSON.stringify(itms);}}}catch(e){}} saveTransactions(allData);}
+        renderItems(); renderHistory(); modal.remove();}
+      };
+    }
+
+    function deleteItem(i){
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-80"><h3 class="font-bold mb-2">Delete Item?</h3><p class="text-gray-600 mb-4">Remove "${items[i].name}"?</p><div class="flex gap-2"><button id="del-cancel" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="del-confirm" class="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium">Delete</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('del-cancel').onclick=()=>modal.remove();
+      document.getElementById('del-confirm').onclick=()=>{items.splice(i,1);saveItems(items);renderItems();modal.remove();};
+    }
+
+    function editHistoryEntry(idx){
+      const entry=allData[idx];if(!entry)return;let items_parsed=[];try{items_parsed=JSON.parse(entry.items);}catch(e){}
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto';
+      function renderItemsList(){return items_parsed.map((it,i)=>{const dn=it.size&&it.size>0?`${it.article} ${it.size}${it.measure}`:it.article;return `<div class="flex justify-between items-center p-2 bg-gray-50 rounded text-xs"><span>${dn}: ${it.quantity} × ₹${it.rate}</span><button type="button" class="text-red-600 font-medium remove-item-btn" data-item-idx="${i}">Remove</button></div>`;}).join('');}
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-96 max-w-full my-8"><h3 class="font-bold mb-4">Edit Entry</h3><div class="space-y-3 mb-4"><div><label class="block text-sm font-medium mb-1">Type</label><div class="flex gap-2"><button type="button" id="edit-type-purchase" class="flex-1 py-2 rounded-lg font-semibold ${entry.type==='purchase'?'bg-green-600 text-white':'bg-gray-200 text-gray-700'}">Purchase</button><button type="button" id="edit-type-sale" class="flex-1 py-2 rounded-lg font-semibold ${entry.type==='sale'?'bg-blue-600 text-white':'bg-gray-200 text-gray-700'}">Sale</button></div></div><div><label class="block text-sm font-medium mb-1">Date</label><input id="edit-date" type="date" class="w-full border rounded-lg p-2" value="${entry.date}"></div><div><label class="block text-sm font-medium mb-1">Party/Customer</label><input id="edit-party" type="text" class="w-full border rounded-lg p-2" value="${entry.party_or_customer}"></div><div><label class="block text-sm font-medium mb-1">Remarks</label><input id="edit-remarks" type="text" class="w-full border rounded-lg p-2" value="${entry.remarks||''}"></div><div><label class="block text-sm font-medium mb-2">Items (${items_parsed.length})</label><div class="space-y-1 max-h-32 overflow-y-auto" id="items-list-container">${renderItemsList()}</div></div></div><div class="flex gap-2"><button id="edit-cancel" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="edit-save" class="flex-1 py-2 rounded-lg bg-green-600 text-white font-medium">Update</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('edit-cancel').onclick=()=>modal.remove();
+      let editType=entry.type;
+      document.getElementById('edit-type-purchase').onclick=()=>{editType='purchase';document.getElementById('edit-type-purchase').className='flex-1 py-2 rounded-lg font-semibold bg-green-600 text-white';document.getElementById('edit-type-sale').className='flex-1 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700';};
+      document.getElementById('edit-type-sale').onclick=()=>{editType='sale';document.getElementById('edit-type-sale').className='flex-1 py-2 rounded-lg font-semibold bg-blue-600 text-white';document.getElementById('edit-type-purchase').className='flex-1 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700';};
+      function attachRemove(){document.querySelectorAll('.remove-item-btn').forEach(btn=>{btn.onclick=(e)=>{e.preventDefault();items_parsed.splice(parseInt(btn.dataset.itemIdx),1);document.getElementById('items-list-container').innerHTML=renderItemsList();attachRemove();};});}attachRemove();
+      document.getElementById('edit-save').onclick=()=>{
+        const updated={...entry,type:editType,date:document.getElementById('edit-date').value,party_or_customer:document.getElementById('edit-party').value.trim(),remarks:document.getElementById('edit-remarks').value||'',items:JSON.stringify(items_parsed)};
+        if(!updated.date||!updated.party_or_customer){showMsg('⚠️ Fill required fields','orange');return;}
+        
+        allData[idx] = updated;
+        saveTransactions(allData);
+        renderHistory();
+        renderStock();
+        modal.remove();
+      };
+    }
+
+    function deleteHistoryEntry(idx){
+      const entry=allData[idx];if(!entry)return;
+      const modal=document.createElement('div');modal.className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.innerHTML=`<div class="bg-white rounded-lg shadow-xl p-6 w-80"><h3 class="font-bold mb-2">Delete Entry?</h3><p class="text-gray-600 mb-4">Remove this ${entry.type} entry for <strong>${entry.party_or_customer}</strong>?</p><div class="flex gap-2"><button id="del-cancel-h" class="flex-1 py-2 rounded-lg border font-medium">Cancel</button><button id="del-confirm-h" class="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium">Delete</button></div></div>`;
+      document.body.appendChild(modal);
+      document.getElementById('del-cancel-h').onclick=()=>modal.remove();
+      document.getElementById('del-confirm-h').onclick=()=>{
+        allData.splice(idx, 1);
+        saveTransactions(allData);
+        renderHistory();
+        renderStock();
+        modal.remove();
+      };
+    }
+
+    // Report
+    let currentReportData=null;
+    function generateReport(){
+      const startDate=document.getElementById('report-start').value;const endDate=document.getElementById('report-end').value;if(!startDate||!endDate)return;
+      const reportData={};
+      allData.forEach(r=>{try{const itms=JSON.parse(r.items);if(!Array.isArray(itms))return;itms.forEach(it=>{const key=`${it.article}|${it.size||0}`;if(!reportData[key])reportData[key]={name:it.article,size:it.size||0,measure:it.measure||'',openPurchaseQty:0,openSaleQty:0,purchaseQty:0,purchaseValue:0,saleQty:0,saleValue:0,totalPurchaseQty:0,totalPurchaseValue:0};const rd=reportData[key];if(r.date<startDate){if(r.type==='purchase'){rd.openPurchaseQty+=(it.quantity||0);rd.totalPurchaseQty+=(it.quantity||0);rd.totalPurchaseValue+=(it.total||0);}else{rd.openSaleQty+=(it.quantity||0);}}else if(r.date>=startDate&&r.date<=endDate){if(r.type==='purchase'){rd.purchaseQty+=(it.quantity||0);rd.purchaseValue+=(it.total||0);rd.totalPurchaseQty+=(it.quantity||0);rd.totalPurchaseValue+=(it.total||0);}else{rd.saleQty+=(it.quantity||0);rd.saleValue+=(it.total||0);}}else{if(r.type==='purchase'){rd.totalPurchaseQty+=(it.quantity||0);rd.totalPurchaseValue+=(it.total||0);}}});}catch(e){}});
+      const entries=Object.values(reportData).filter(r=>r.openPurchaseQty>0||r.openSaleQty>0||r.purchaseQty>0||r.saleQty>0);
+      if(entries.length===0){document.getElementById('report-output').innerHTML='';document.getElementById('empty-report').textContent='No data found';document.getElementById('empty-report').classList.remove('hidden');document.getElementById('export-btn').classList.add('hidden');document.getElementById('insights-section').classList.add('hidden');return;}
+      document.getElementById('empty-report').classList.add('hidden');document.getElementById('export-btn').classList.remove('hidden');document.getElementById('insights-section').classList.remove('hidden');
+      let totals={openStock:0,purchaseQty:0,purchaseValue:0,saleQty:0,saleValue:0,closingStock:0,valuation:0,netProfit:0};
+      const rows=entries.sort((a,b)=>a.name.localeCompare(b.name)).map(r=>{const openStock=r.openPurchaseQty-r.openSaleQty;const closingStock=openStock+r.purchaseQty-r.saleQty;const avgPrice=r.totalPurchaseQty>0?r.totalPurchaseValue/r.totalPurchaseQty:0;const valuation=Math.round(closingStock*avgPrice*100)/100;const costOfSold=Math.round(r.saleQty*avgPrice*100)/100;const netProfit=Math.round((r.saleValue-costOfSold)*100)/100;const displayName=r.size&&r.size>0?`${r.name} ${r.size}${r.measure}`:r.name;totals.openStock+=openStock;totals.purchaseQty+=r.purchaseQty;totals.purchaseValue+=r.purchaseValue;totals.saleQty+=r.saleQty;totals.saleValue+=r.saleValue;totals.closingStock+=closingStock;totals.valuation+=valuation;totals.netProfit+=netProfit;const pc=netProfit>0?'text-green-700':netProfit<0?'text-red-600':'';return `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-xs">${displayName}</td><td class="p-2 text-center text-xs">${openStock}</td><td class="p-2 text-center text-xs">${r.purchaseQty}</td><td class="p-2 text-right text-xs">₹${Math.round(r.purchaseValue)}</td><td class="p-2 text-center text-xs">${r.saleQty}</td><td class="p-2 text-right text-xs">₹${Math.round(r.saleValue)}</td><td class="p-2 text-center text-xs font-semibold">${closingStock}</td><td class="p-2 text-right text-xs">₹${Math.round(valuation)}</td><td class="p-2 text-right text-xs font-semibold ${pc}">₹${Math.round(netProfit)}</td></tr>`;}).join('');
+      const ptc=totals.netProfit>0?'text-green-700':totals.netProfit<0?'text-red-600':'';
+      document.getElementById('report-output').innerHTML=`<table class="report-table w-full text-sm border rounded-lg overflow-hidden"><thead><tr class="bg-green-700 text-white text-xs"><th class="p-2 text-left">Article</th><th class="p-2 text-center">Opening</th><th class="p-2 text-center">Pur Qty</th><th class="p-2 text-right">Pur Value</th><th class="p-2 text-center">Sale Qty</th><th class="p-2 text-right">Sale Value</th><th class="p-2 text-center">Closing</th><th class="p-2 text-right">Valuation</th><th class="p-2 text-right">Net Profit</th></tr></thead><tbody>${rows}</tbody><tfoot><tr class="bg-green-50 font-bold text-xs border-t-2 border-green-700"><td class="p-2">TOTAL</td><td class="p-2 text-center">${totals.openStock}</td><td class="p-2 text-center">${totals.purchaseQty}</td><td class="p-2 text-right">₹${Math.round(totals.purchaseValue)}</td><td class="p-2 text-center">${totals.saleQty}</td><td class="p-2 text-right">₹${Math.round(totals.saleValue)}</td><td class="p-2 text-center">${totals.closingStock}</td><td class="p-2 text-right">₹${Math.round(totals.valuation)}</td><td class="p-2 text-right ${ptc}">₹${Math.round(totals.netProfit)}</td></tr></tfoot></table>`;
+      currentReportData={entries,totals,startDate,endDate};populateInsights(entries);
+    }
+
+    function populateInsights(entries){
+      const topSellers=entries.filter(e=>e.saleQty>0).sort((a,b)=>b.saleQty-a.saleQty).slice(0,5);
+      document.getElementById('top-sellers-list').innerHTML=topSellers.length>0?topSellers.map(e=>`<div class="text-green-800">• ${e.name}: ${e.saleQty} units</div>`).join(''):'<div>No sales data</div>';
+      const deadStock=entries.filter(e=>(e.openPurchaseQty>0||e.purchaseQty>0)&&e.saleQty===0).slice(0,5);
+      document.getElementById('dead-stock-list').innerHTML=deadStock.length>0?deadStock.map(e=>`<div class="text-yellow-800">• ${e.name}</div>`).join(''):'<div>None</div>';
+      document.getElementById('analysis-section').classList.add('hidden');
+    }
+
+    let currentSuggestions=[];
+    function analyzeOrderSuggestions(){
+      const threeMonthsAgo=new Date(Date.now()-90*24*60*60*1000).toISOString().split('T')[0];const allInventory={};
+      items.forEach(it=>{const key=`${it.name}|${it.size||0}`;if(!allInventory[key])allInventory[key]={name:it.name,size:it.size||0,measure:it.measure||'',totalPurchaseQty:0,totalPurchaseValue:0,totalSaleQty:0,last3MonthsSaleQty:0,currentStock:0,avgPrice:it.purchasePrice||0};});
+      allData.forEach(r=>{try{const itms=JSON.parse(r.items);if(!Array.isArray(itms))return;itms.forEach(it=>{const key=`${it.article}|${it.size||0}`;if(!allInventory[key])allInventory[key]={name:it.article,size:it.size||0,measure:it.measure||'',totalPurchaseQty:0,totalPurchaseValue:0,totalSaleQty:0,last3MonthsSaleQty:0,currentStock:0,avgPrice:0};const inv=allInventory[key];if(r.type==='purchase'){inv.totalPurchaseQty+=(it.quantity||0);inv.totalPurchaseValue+=(it.total||0);}else{inv.totalSaleQty+=(it.quantity||0);if(r.date>=threeMonthsAgo)inv.last3MonthsSaleQty+=(it.quantity||0);}});}catch(e){}});
+      Object.values(allInventory).forEach(inv=>{inv.currentStock=inv.totalPurchaseQty-inv.totalSaleQty;if(inv.totalPurchaseQty>0)inv.avgPrice=inv.totalPurchaseValue/inv.totalPurchaseQty;});
+      const suggestions=[];const seen=new Set();
+      Object.values(allInventory).forEach(inv=>{
+        if(inv.currentStock===0&&(inv.totalPurchaseQty>0||inv.totalSaleQty>0))suggestions.push({type:'dead',item:inv.name,size:inv.size,measure:inv.measure,currentQty:0,suggestedQty:Math.max(5,Math.ceil(inv.last3MonthsSaleQty||3)),message:`⚠️ <strong>${inv.name}</strong>: Out of stock. Order ${Math.max(5,Math.ceil(inv.last3MonthsSaleQty||3))} units.`,priority:1});
+        else if(inv.currentStock>0&&inv.currentStock<5&&(inv.totalSaleQty>0))suggestions.push({type:'low',item:inv.name,size:inv.size,measure:inv.measure,currentQty:inv.currentStock,suggestedQty:Math.max(5,Math.ceil(inv.last3MonthsSaleQty/3*2)),message:`📉 <strong>${inv.name}</strong>: Low (${Math.round(inv.currentStock*100)/100}). Order ${Math.max(5,Math.ceil(inv.last3MonthsSaleQty/3*2))} units.`,priority:2});
+        else if(inv.last3MonthsSaleQty>0&&inv.currentStock<inv.last3MonthsSaleQty*0.5)suggestions.push({type:'high',item:inv.name,size:inv.size,measure:inv.measure,currentQty:inv.currentStock,suggestedQty:Math.ceil(inv.last3MonthsSaleQty/3*2),message:`💰 <strong>${inv.name}</strong>: High demand. Current: ${Math.round(inv.currentStock)}, Suggest: ${Math.ceil(inv.last3MonthsSaleQty/3*2)}`,priority:3});
+      });
+      const unique=suggestions.filter(s=>{const k=`${s.item}|${s.size}`;if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>a.priority-b.priority);
+      currentSuggestions=unique;
+      document.getElementById('analysis-content').innerHTML=unique.length===0?'<div class="text-gray-600">✓ Inventory balanced.</div>':unique.map(s=>`<div class="p-2 bg-gray-50 rounded border-l-2 border-gray-300">${s.message}</div>`).join('');
+      document.getElementById('export-suggestions-btn').classList.toggle('hidden',unique.length===0);
+      document.getElementById('analysis-section').classList.remove('hidden');
+    }
+
+    function exportSuggestions(){if(currentSuggestions.length===0)return;let csv='Order Suggestions\nItem,Current Qty,Suggested Qty,Measure\n';currentSuggestions.forEach(s=>{csv+=`"${s.item}",${s.currentQty},${s.suggestedQty},"${s.measure}"\n`;});const blob=new Blob([csv],{type:'text/csv'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`suggestions_${new Date().toISOString().split('T')[0]}.csv`;link.click();}
+
+    function exportToExcel(){if(!currentReportData)return;const{entries,totals,startDate,endDate}=currentReportData;let csv=`Pesticide Report ${startDate} to ${endDate}\nArticle,Opening,Pur Qty,Pur Value,Sale Qty,Sale Value,Closing,Valuation,Net Profit\n`;entries.sort((a,b)=>a.name.localeCompare(b.name)).forEach(r=>{const o=r.openPurchaseQty-r.openSaleQty;const c=o+r.purchaseQty-r.saleQty;const avg=r.totalPurchaseQty>0?r.totalPurchaseValue/r.totalPurchaseQty:0;const v=Math.round(c*avg);const np=Math.round(r.saleValue-r.saleQty*avg);const dn=r.size&&r.size>0?`${r.name} ${r.size}${r.measure}`:r.name;csv+=`"${dn}",${o},${r.purchaseQty},${Math.round(r.purchaseValue)},${r.saleQty},${Math.round(r.saleValue)},${c},${v},${np}\n`;});csv+=`\nTOTAL,${totals.openStock},${totals.purchaseQty},${Math.round(totals.purchaseValue)},${totals.saleQty},${Math.round(totals.saleValue)},${totals.closingStock},${Math.round(totals.valuation)},${Math.round(totals.netProfit)}\n`;const blob=new Blob([csv],{type:'text/csv'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`report_${startDate}_${endDate}.csv`;link.click();}
+
+    function handleSubmit(e){
+      e.preventDefault();
+      const btn=currentType==='purchase'?document.getElementById('submit-btn-purchase'):document.getElementById('submit-btn-sale');
+      if(entryItems.length===0){showMsg('⚠️ Add at least one item','orange');return;}
+      let party=currentType==='purchase'?partyInput.value.trim():document.getElementById('customer').value.trim();
+      if(!party){showMsg('⚠️ Enter '+(currentType==='purchase'?'party':'customer'),'orange');return;}
+      
+      const remarks=document.getElementById('remarks').value||'';
+      const date=document.getElementById('date').value;
+      const record={type:currentType,items:JSON.stringify(entryItems),party_or_customer:party,remarks,date};
+      
+      // Replace SDK with Local Array Push
+      allData.push(record);
+      saveTransactions(allData);
+
+      if(currentType==='purchase'){
+        entryItems.forEach(it=>{
+          const item=items.find(i=>i.name===it.article);
+          if(item){item.purchasePrice=it.rate;item.purchaseDate=date;}
+        });
+        saveItems(items);
+      }
+      
+      // Add party to list if new
+      if(currentType==='purchase'&&!parties.includes(party)){
+        parties.push(party);
+        saveParties(parties);
+      }
+      
+      showMsg('✓ Saved!','green');
+      document.getElementById('entry-form').reset();
+      document.getElementById('date').value=new Date().toISOString().split('T')[0];
+      entryItems=[];
+      renderEntryItems();
+      renderHistory();
+      renderStock();
+      selectedArticle='';
+      document.getElementById('measure-display').textContent='';
+      setType(currentType);
+    }
+
+    // Initialize UI on load
+    renderHistory();
+    renderStock();
+
+    document.getElementById('btn-add-item').addEventListener('click',addItemToEntry);
+    
+    async function syncToGoogleSheets() {
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxarqsAg2PjVhDwQ-b5oW6yPmOMe4m-7kJCiJGUGCUk00R7gSxv9ch7vy-iZ7do9enA/exec';
+      const btn = document.getElementById('sync-btn');
+      
+      btn.textContent = 'Syncing to Google Sheets...';
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          transactions: allData,
+          items: items,
+          parties: parties,
+          measures: measures
+        };
+
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        });
+
+        const result = await response.json();
+        if(result.status === 'success') {
+          showMsg('✓ Successfully synced to Sheets!','green');
+        } else {
+          showMsg('⚠️ Sync Error: ' + result.message, 'red');
+        }
+      } catch(e) {
+        showMsg('⚠️ Network Error during sync', 'red');
+        console.error(e);
+      }
+      
+      btn.textContent = 'Sync Data to Google Sheets';
+      btn.disabled = false;
+    }
+    
+    lucide.createIcons();
+  </script>
+  </main>
+</body>
+</html>
